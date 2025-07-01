@@ -1,4 +1,4 @@
-# CSE-406-IOT
+# CSE-406-IOT lab 2
 to show update of my CSE 406 work update
 1 july report of lab 2 
 Arduino Water Level Sensor Project Report
