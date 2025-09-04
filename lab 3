@@ -1,0 +1,155 @@
+Lab 3
+
+UART Communication Stress Test with NodeMCU ESP8266
+
+Submitted by: Al-Amin Sarker
+
+
+1. Introduction
+
+UART (Universal Asynchronous Receiver/Transmitter) is a serial communication protocol widely used in microcontrollers. The NodeMCU ESP8266 supports UART for communicating with external devices and for debugging via USB. This lab focuses on testing the reliability and performance of UART communication under stress conditions by sending and receiving large volumes of data at different baud rates.
+
+2. Objective
+
+To perform stress testing of UART communication on NodeMCU ESP8266 by transmitting and receiving continuous data streams, measuring stability, and detecting data loss or corruption.
+
+3. Components Required
+
+NodeMCU ESP8266 (1x)
+
+USB Cable
+
+Computer with Arduino IDE / Serial Monitor / External Serial Terminal
+
+(Optional) Another microcontroller (e.g., Arduino Uno) for loopback tests
+
+4. Test Setup Variants (Codes)
+
+Below are several test code examples — you can pick, combine, or run sequentially:
+
+Code A — Basic UART Echo (Loopback Test)
+
+Sends any received data back to the sender — used to verify if data is received correctly.
+
+void setup() {
+  Serial.begin(115200);   // Set UART baud rate
+  Serial.println("UART Echo Test Ready");
+}
+
+void loop() {
+  if (Serial.available()) {
+    char c = Serial.read();
+    Serial.write(c);  // Echo back the character
+  }
+}
+
+Code B — Continuous Data Flood (Stress Test)
+
+Continuously sends data to fill the UART buffer and check stability.
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("UART Stress Test: Continuous Flood");
+}
+
+void loop() {
+  for (int i = 0; i < 1000; i++) {
+    Serial.print("Packet ");
+    Serial.print(i);
+    Serial.print(": Test Data ******************************\n");
+    delay(1); // Small delay to avoid watchdog reset
+  }
+}
+
+Code C — Baud Rate Sweep (Performance Test)
+
+Tests different baud rates to find the maximum stable speed.
+
+long baudRates[] = {9600, 19200, 38400, 57600, 115200, 230400, 460800};
+int currentBaudIndex = 0;
+
+void setup() {
+  Serial.begin(baudRates[currentBaudIndex]);
+  Serial.println("Starting Baud Rate Sweep Test");
+}
+
+void loop() {
+  Serial.print("Testing Baud Rate: ");
+  Serial.println(baudRates[currentBaudIndex]);
+  
+  for (int i = 0; i < 100; i++) {
+    Serial.print("Data Packet ");
+    Serial.println(i);
+    delay(10);
+  }
+  
+  currentBaudIndex++;
+  if (currentBaudIndex >= (sizeof(baudRates) / sizeof(baudRates[0]))) {
+    Serial.println("Baud Rate Test Complete");
+    while (1); // Stop
+  } else {
+    Serial.begin(baudRates[currentBaudIndex]);
+  }
+}
+
+Code D — Random Data Integrity Check (Self-Test)
+
+Generates random data, sends it, and expects it back (requires external echo device or loopback).
+
+#define PACKETS 100
+char testData[32];
+
+void setup() {
+  Serial.begin(115200);
+  randomSeed(analogRead(0));
+  Serial.println("Random Data Integrity Test");
+}
+
+void loop() {
+  for (int i = 0; i < PACKETS; i++) {
+    for (int j = 0; j < sizeof(testData) - 1; j++) {
+      testData[j] = char(random(32, 126)); // printable ASCII
+    }
+    testData[31] = '\0';
+    
+    Serial.print("TX: ");
+    Serial.println(testData);
+    
+    delay(5); // Adjust based on device response
+  }
+  
+  Serial.println("Test Complete");
+  while (1); // Stop
+}
+
+Code E — Watchdog & Buffer Overflow Test
+
+Sends massive data without delays to see if the ESP8266 resets or corrupts data.
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Watchdog / Buffer Overflow Test");
+}
+
+void loop() {
+  for (long i = 0; i < 100000; i++) {
+    Serial.print("StressData-");
+    Serial.println(i);
+    // No delay, high-speed data output
+  }
+  
+  Serial.println("Stress Phase Complete");
+  while (1); // Stop
+}
+
+5. Observations / Expected Results
+
+Code A: Data should echo back correctly with no loss.
+
+Code B: High data load should be stable; any corruption indicates buffer issues.
+
+Code C: Find the highest stable baud rate.
+
+Code D: Confirms integrity when external echo is used.
+
+Code E: May trigger watchdog reset if ESP8266 cannot handle data flood — this is expected during stress tests.
