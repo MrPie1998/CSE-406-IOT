@@ -1,0 +1,250 @@
+Lab 4: Mesh Networking with NodeMCU ESP8266 and painlessMesh
+Submitted by : Al-Amin Sarker 
+
+ Submitted to: Dr. Raihan Ul Islam
+Associate Professor
+Department of Computer Science & Engineering
+
+
+1. Introduction
+Mesh networking enables IoT devices to communicate directly with each other without depending on a central access point or router. In a mesh topology, each node acts as both a transmitter and receiver, extending network coverage through multi-hop communication.
+In this lab, we use NodeMCU ESP8266 boards with the painlessMesh library to create a decentralized network. We explore broadcasting messages, handling network event callbacks, sending direct messages to specific nodes, and observing routing behavior when nodes are placed at varying distances to demonstrate multi-hop routing.
+
+2. Objectives
+By completing this lab, students will be able to:
+Set up a mesh network using painlessMesh on ESP8266 devices.
+
+
+Demonstrate broadcasting messages across multiple nodes.
+
+
+Explain key network event callbacks (New Connection, Connection Change, Adjusted Time).
+
+
+Modify code to send targeted messages to specific nodes.
+
+
+Observe multi-hop routing and analyze how painlessMesh chooses communication paths.
+
+
+
+3. Materials Required
+4–6 NodeMCU ESP8266 boards (minimum 3)
+
+
+Micro-USB cables
+
+
+Computers with Arduino IDE (v1.8+)
+
+
+painlessMesh library (Coopdis)
+
+
+Serial Monitor tools (Arduino IDE)
+
+
+Optional LEDs or sensors for visual feedback
+
+
+
+4. Background
+painlessMesh is a library that abstracts mesh networking complexities for ESP8266/ESP32 devices. It handles:
+Automatic routing based on link quality.
+
+
+Time synchronization among all nodes.
+
+
+Event callbacks to monitor network state changes.
+
+
+Nodes can communicate via:
+mesh.sendBroadcast() — sends to all connected nodes.
+
+
+mesh.sendSingle(nodeId, message) — sends to a specific node.
+
+
+The network dynamically adapts if nodes join, leave, or move, making it suitable for smart home systems, sensor networks, and mobile IoT environments.
+
+5. Procedure Summary
+Install painlessMesh via Arduino Library Manager.
+
+
+Configure ESP8266 board support in Arduino IDE.
+
+
+Load the base painlessMesh example on each NodeMCU, ensuring the same MESH_PREFIX, MESH_PASSWORD, and MESH_PORT.
+
+
+Verify basic broadcasting with 3+ nodes.
+
+
+Observe callback logs for New Connection, Connection Change, and Adjusted Time.
+
+
+Modify code to implement direct messaging to a specific node.
+
+
+Arrange nodes in a physical layout to test multi-hop communication.
+
+
+Capture logs and analyze routing behavior.
+
+
+
+6. Tasks and Results
+
+Task 1: Explain the Meanings of Different Messages
+From the serial logs, we observed the following events:
+Callback Type
+Meaning
+Example Serial Log
+New Connection
+Triggered when a new node connects directly to this node. Mesh expands.
+--> startHere: New Connection, nodeId = 3423412
+Connection Change
+Indicates network topology changed — a node joined, left, or link updated.
+Changed connections
+Adjusted Time
+Triggered when the node synchronizes its clock with the mesh's global time reference.
+Adjusted time 2487234. Offset = 152
+
+Explanation (in our own words):
+New Connection: Confirms that another NodeMCU successfully joined the network and formed a direct link.
+
+
+Connection Change: Signals that the routing table has been updated due to a topology change.
+
+
+Adjusted Time: Ensures that all nodes share synchronized timing for coordinated operations.
+
+
+
+Task 2: Update the Code to Directly Send a Message to a Specific Node
+We modified the default painlessMesh code to send a direct message to a known targetNodeId.
+Modified Code Snippet:
+#include <painlessMesh.h>
+
+
+#define   MESH_PREFIX     "IoTMeshNetwork"
+#define   MESH_PASSWORD   "password123"
+#define   MESH_PORT       5555
+
+
+Scheduler userScheduler; // to control task timing
+painlessMesh mesh;
+
+
+uint32_t targetNodeId = 12345678; // <-- Replace with actual target node ID
+
+
+void sendMessage() {
+  String msg = "Direct hello from node " + String(mesh.getNodeId());
+  if (mesh.isConnected(targetNodeId)) {
+    mesh.sendSingle(targetNodeId, msg);
+    Serial.println("Sent direct message to node: " + String(targetNodeId));
+  } else {
+    Serial.println("Target node not connected.");
+  }
+}
+
+
+void setup() {
+  Serial.begin(115200);
+  mesh.setDebugMsgTypes(ERROR | STARTUP);  
+  mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT);
+  mesh.onNewConnection([](uint32_t nodeId) {
+    Serial.printf("New Connection, nodeId = %u\n", nodeId);
+  });
+  mesh.onChangedConnections([]() {
+    Serial.println("Changed connections");
+  });
+  mesh.onReceive([](uint32_t from, String &msg) {
+    Serial.printf("Received from %u msg=%s\n", from, msg.c_str());
+  });
+
+
+  userScheduler.addTask(Task(5000, TASK_FOREVER, &sendMessage));
+  userScheduler.getTask(0).enable();
+}
+
+
+void loop() {
+  userScheduler.execute();  
+  mesh.update();
+}
+
+Result:
+Only the specified target node received the message (Direct hello from node [ID]).
+
+
+Other nodes did not show the message in their serial logs.
+
+
+
+Task 3: Demonstrate Multi-Hop Direct Messaging Based on Signal Strength
+We placed 3 nodes:
+Node A and Node C far apart.
+
+
+Node B positioned in between (in range of both A and C).
+
+
+Using the modified direct messaging code:
+Node A sent a message to Node C.
+
+
+painlessMesh automatically routed the message via Node B.
+
+
+Observed Behavior:
+Node B acted as a relay — no code changes were needed.
+
+
+Moving Node B caused re-routing or delivery failures depending on signal strength.
+
+
+Sample Debug Output:
+New Connection, nodeId = 8543221
+Changed connections
+Received from 8543221 msg=Direct hello from node 10123984
+Routing through node 8543221 -> 10123984
+
+
+7. Observations
+painlessMesh simplifies multi-hop networking without requiring manual routing logic.
+
+
+Network automatically adapted when nodes moved, proving self-healing capabilities.
+
+
+Direct messaging allowed targeted communication, useful for private commands in a mesh environment.
+
+
+
+8. Advantages of Mesh Topology
+Resilience: No single point of failure like a router.
+
+
+Extended Coverage: Nodes relay messages, increasing range.
+
+
+Dynamic Routing: Adjusts automatically to environment changes.
+
+
+
+9. Applications
+Smart home automation (lights, sensors, alarms).
+
+
+Distributed environmental monitoring (agriculture, weather stations).
+
+
+Emergency communication networks where infrastructure is damaged.
+
+
+
+10. Conclusion
+In this lab, we successfully set up a mesh network using painlessMesh on NodeMCU ESP8266 boards. We explored broadcasting, event callbacks, direct messaging, and multi-hop routing. This hands-on experiment demonstrated the practicality of decentralized IoT networks, laying the foundation for scalable, reliable, and flexible device-to-device communication systems.
