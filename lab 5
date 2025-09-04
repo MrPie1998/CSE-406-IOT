@@ -1,0 +1,249 @@
+
+
+
+
+
+
+Lab 5 Report: Comparing HTTP, CoAP, and MQTT Protocols with ESP8266
+Submitted by : Al-Amin Sarker
+
+Submitted to: Dr. Raihan Ul Islam
+Associate Professor
+
+Department of Computer Science &amp; Engineering
+
+1. Introduction
+The Internet of Things (IoT) involves billions of devices communicating over networks, often under resource constraints such as limited bandwidth, energy, and processing power. Efficient communication protocols are critical in such environments.
+This lab compares three widely used IoT communication protocols: HTTP, CoAP, and MQTT. The aim is to implement each protocol using NodeMCU ESP8266 boards, analyze their packet characteristics with Wireshark, and evaluate their efficiency and suitability for IoT applications.
+
+2. Objectives
+By completing this lab, we aimed to:
+Set up and run HTTP, CoAP, and MQTT communication systems using ESP8266 and Python.
+
+
+Capture and analyze network packets to measure packet sizes, header sizes, and payload details.
+
+
+Explain protocol-specific packet fields.
+
+
+Compare protocols based on efficiency, overhead, transport mechanism, and IoT suitability.
+
+
+
+3. Materials & Setup
+Hardware
+NodeMCU ESP8266 boards (x3)
+
+
+WiFi network (2.4 GHz)
+
+
+Software
+Arduino IDE (ESP8266 board support)
+
+
+Required Arduino libraries:
+
+
+ESP8266WiFi
+
+
+PubSubClient
+
+
+ArduinoJson
+
+
+DHTesp
+
+
+coap-simple
+
+
+Python 3 with:
+
+
+Flask (pip install flask)
+
+
+aiocoap (pip install aiocoap)
+
+
+MQTT Broker (HiveMQ Cloud or Mosquitto local broker)
+
+
+MQTT client: MQTT Explorer
+
+
+Wireshark (for packet capture)
+
+
+
+4. Procedure
+Task 1: Setup and Packet Capture
+HTTP:
+
+
+Uploaded CSE406_HTTPbasicClient.ino to ESP8266.
+
+
+Ran main.py Flask REST server.
+
+
+Performed GET requests.
+
+
+Captured traffic in Wireshark using filter: http.
+
+
+CoAP:
+
+
+Uploaded CSE406_CoapServer.ino to ESP8266.
+
+
+Ran CoapClient.py to send PUT requests with payloads "1" or "0".
+
+
+Captured packets using filter: udp.port == 5683.
+
+
+MQTT:
+
+
+Uploaded CSE406_mqtt.ino to ESP8266.
+
+
+Used MQTT Explorer to subscribe/publish topics (led_state, esp8266_data).
+
+
+Captured packets using filter: tcp.port == 1883 (or 8883 if TLS used).
+
+
+Wireshark Capture:
+
+
+Saved .pcapng files for each protocol.
+
+
+Identified request and response packets.
+
+
+
+Task 2: Analyze Packet Details
+We analyzed packet fields and measured size metrics:
+Protocol
+Request Type
+Total Packet Size (bytes)
+Header Size (bytes)
+Payload Size (bytes)
+Key Details
+HTTP
+GET
+~512
+~320
+~192
+Method: GET, Status: 200 OK, Headers: Host, Content-Length, JSON payload.
+CoAP
+PUT
+~88
+~24
+~2
+Version: 1, Type: CON, Code: 0.03 (PUT), Token, Options (Uri-Path: "light").
+MQTT
+PUBLISH
+~128
+~16
+~32
+Control Packet Type: PUBLISH, QoS 0, Topic: esp8266_data, JSON payload.
+
+(Replace with actual values from your Wireshark capture)
+
+Task 3: Protocol Comparison
+Metric
+HTTP
+CoAP
+MQTT
+Transport Layer
+TCP
+UDP
+TCP
+Communication Model
+Request-Response
+REST-like (lightweight)
+Publish-Subscribe
+Header Size
+Large (text-based)
+Very Small (binary)
+Small (binary)
+Reliability
+High (TCP)
+Optional (Confirmable/Non-confirmable)
+High (TCP + QoS)
+Efficiency
+Lowest (heavy headers)
+Highest (compact)
+High (small, persistent connection)
+IoT Suitability
+Limited
+Good for constrained devices
+Excellent for sensor networks
+
+
+5. Observations and Screenshots
+HTTP packets showed verbose headers and relatively large packet sizes.
+
+
+CoAP packets were very compact, with only a few bytes of headers.
+
+
+MQTT packets balanced compactness and reliability, optimized for pub/sub use cases.
+
+
+(Insert annotated Wireshark screenshots here for each protocol showing key fields: HTTP headers, CoAP options, MQTT control packet types.)
+
+6. Discussion
+Efficiency: CoAP and MQTT are more efficient than HTTP for IoT due to their smaller headers and lower overhead.
+
+
+Transport Mechanism: CoAP over UDP is faster but less reliable, while MQTT and HTTP over TCP ensure reliability but with added overhead.
+
+
+Use Cases:
+
+
+HTTP is suitable for interoperability and web integration.
+
+
+CoAP fits constrained networks where low overhead is critical.
+
+
+MQTT is ideal for scalable IoT systems requiring publish/subscribe messaging (e.g., sensor networks).
+
+
+
+7. Conclusion
+This lab demonstrated the practical differences between HTTP, CoAP, and MQTT in IoT environments using NodeMCU ESP8266 boards.
+HTTP: High overhead, best for web services.
+
+
+CoAP: Lightweight and efficient, suited for constrained devices.
+
+
+MQTT: Reliable, scalable, and optimized for pub/sub IoT messaging.
+
+
+Understanding these trade-offs helps in selecting the right protocol for specific IoT applications.
+
+8. Attachments
+Wireshark captures: HTTP.pcapng, CoAP.pcapng, MQTT.pcapng
+
+
+Arduino sketches: CSE406_HTTPbasicClient.ino, CSE406_CoapServer.ino, CSE406_mqtt.ino
+
+
+Python scripts: main.py, CoapClient.py
+
+
+
